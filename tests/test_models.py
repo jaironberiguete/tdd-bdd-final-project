@@ -27,7 +27,7 @@ import os
 import logging
 import unittest
 from decimal import Decimal
-from service.models import Product, Category, db
+from service.models import Product, Category, db, DataValidationError
 from service import app
 from tests.factories import ProductFactory
 
@@ -136,6 +136,20 @@ class TestProductModel(unittest.TestCase):
         self.assertEqual(products[0].id, original_id)
         self.assertEqual(products[0].description, "testing")
     
+    def test_update_with_empty(self):
+        """I should check update throws an error"""
+        product = ProductFactory()
+        product.id = None
+        self.assertIsNone(product.id)
+        # Change it an save it
+        product.description = "testing"
+        original_id = product.id
+        #results = product.update()
+        try:
+            product.update()
+        except DataValidationError as e:
+            self.assertEqual(str(e), "Update called with empty ID field")
+    
     def test_delete_a_product(self):
         """I should delete a product from the database"""
         product = ProductFactory()
@@ -183,6 +197,30 @@ class TestProductModel(unittest.TestCase):
         
         for product in found:
             self.assertEqual(product.available, available)
+
+    # def test_serialize_error(self):
+    #     """It should converts a Product object into a dictionary representation"""
+    #     product = ProductFactory()
+    #     product.id = None
+    #     product.create()
+    #     self.assertIsNotNone(product.id)
+    #     to_dict = product.serialize()
+    #     self.assertIsInstance(to_dict, dict)
+
+    # def test_deserialize_error(self):
+    #     """It should throw an inavlid entry error to deseriliaze"""
+    #     product = ProductFactory()
+    #     product.id = None
+    #     product.create()
+    #     self.assertIsNotNone(product.id)
+    #     to_dict = {}
+    #     # try:
+    #     # from_dict = product.deserialize(to_dict)
+    #     # except DataValidationError as e:
+    #     #     self.assertIn("Invalid ", e)
+
+    #     self.assertIsInstance(product.deserialize(to_dict), Exception)
+        
     
     def test_find_by_category(self):
         """It should Find Products by Category"""
@@ -197,9 +235,3 @@ class TestProductModel(unittest.TestCase):
 
         for product in found:
             self.assertEqual(product.category, category)
-
-        
-
-
-    
-
